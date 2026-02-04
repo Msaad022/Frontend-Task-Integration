@@ -34,7 +34,7 @@ export default function CompanySetupPage() {
         <div className="space-y-2">
           <Label>Industry</Label>
           <Select>
-            <SelectTrigger>
+            <SelectTrigger className="w-full">
               <SelectValue placeholder="Select an industry" />
             </SelectTrigger>
             <SelectContent>

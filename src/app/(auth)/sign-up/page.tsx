@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Link from "next/link";
 import {
   Card,
@@ -10,8 +13,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import { PhoneInput } from "@/components/ui/phone-input";
 
 export default function SignUpPage() {
+  const [phone, setPhone] = useState("");
+
   return (
     <Card>
       <CardHeader>
@@ -35,7 +41,12 @@ export default function SignUpPage() {
         </div>
         <div className="space-y-2">
           <Label htmlFor="phone">Phone</Label>
-          <Input id="phone" type="tel" placeholder="+1 (555) 000-0000" />
+          <PhoneInput
+            defaultCountry="EG"
+            value={phone}
+            onChange={(value) => setPhone(value)}
+            placeholder="Enter phone number"
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="password">Password</Label>
