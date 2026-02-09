@@ -1,35 +1,148 @@
 {
   "languages": [
-    { "id": "en", "name": "English", "code": "en" },
-    { "id": "ar", "name": "Arabic", "code": "ar" },
-    { "id": "fr", "name": "French", "code": "fr" },
-    { "id": "es", "name": "Spanish", "code": "es" },
-    { "id": "de", "name": "German", "code": "de" },
-    { "id": "it", "name": "Italian", "code": "it" },
-    { "id": "pt", "name": "Portuguese", "code": "pt" },
-    { "id": "zh", "name": "Chinese", "code": "zh" },
-    { "id": "ja", "name": "Japanese", "code": "ja" },
-    { "id": "ko", "name": "Korean", "code": "ko" }
+    {
+      "id": "en",
+      "name": "English",
+      "code": "en"
+    },
+    {
+      "id": "ar",
+      "name": "Arabic",
+      "code": "ar"
+    },
+    {
+      "id": "fr",
+      "name": "French",
+      "code": "fr"
+    },
+    {
+      "id": "es",
+      "name": "Spanish",
+      "code": "es"
+    },
+    {
+      "id": "de",
+      "name": "German",
+      "code": "de"
+    },
+    {
+      "id": "it",
+      "name": "Italian",
+      "code": "it"
+    },
+    {
+      "id": "pt",
+      "name": "Portuguese",
+      "code": "pt"
+    },
+    {
+      "id": "zh",
+      "name": "Chinese",
+      "code": "zh"
+    },
+    {
+      "id": "ja",
+      "name": "Japanese",
+      "code": "ja"
+    },
+    {
+      "id": "ko",
+      "name": "Korean",
+      "code": "ko"
+    }
   ],
   "voices": [
-    { "id": "alloy", "name": "Alloy", "tag": "Premium", "language": "en" },
-    { "id": "echo", "name": "Echo", "tag": "Standard", "language": "en" },
-    { "id": "fable", "name": "Fable", "tag": "Premium", "language": "en" },
-    { "id": "onyx", "name": "Onyx", "tag": "Standard", "language": "en" },
-    { "id": "nova", "name": "Nova", "tag": "Premium", "language": "en" },
-    { "id": "shimmer", "name": "Shimmer", "tag": "Standard", "language": "en" }
+    {
+      "id": "alloy",
+      "name": "Alloy",
+      "tag": "Premium",
+      "language": "en"
+    },
+    {
+      "id": "echo",
+      "name": "Echo",
+      "tag": "Standard",
+      "language": "en"
+    },
+    {
+      "id": "fable",
+      "name": "Fable",
+      "tag": "Premium",
+      "language": "en"
+    },
+    {
+      "id": "onyx",
+      "name": "Onyx",
+      "tag": "Standard",
+      "language": "en"
+    },
+    {
+      "id": "nova",
+      "name": "Nova",
+      "tag": "Premium",
+      "language": "en"
+    },
+    {
+      "id": "shimmer",
+      "name": "Shimmer",
+      "tag": "Standard",
+      "language": "en"
+    }
   ],
   "prompts": [
-    { "id": "default", "name": "Default Prompt", "description": "General-purpose prompt" },
-    { "id": "sales", "name": "Sales Prompt", "description": "Optimized for sales" },
-    { "id": "support", "name": "Support Prompt", "description": "Optimized for support" },
-    { "id": "custom", "name": "Custom Prompt", "description": "Build your own" }
+    {
+      "id": "default",
+      "name": "Default Prompt",
+      "description": "General-purpose prompt"
+    },
+    {
+      "id": "sales",
+      "name": "Sales Prompt",
+      "description": "Optimized for sales"
+    },
+    {
+      "id": "support",
+      "name": "Support Prompt",
+      "description": "Optimized for support"
+    },
+    {
+      "id": "custom",
+      "name": "Custom Prompt",
+      "description": "Build your own"
+    }
   ],
   "models": [
-    { "id": "pro", "name": "Pro", "description": "Highest quality, lowest latency" },
-    { "id": "standard", "name": "Standard", "description": "Balanced quality and cost" },
-    { "id": "flex", "name": "Flex", "description": "Cost-effective for high volume" }
+    {
+      "id": "pro",
+      "name": "Pro",
+      "description": "Highest quality, lowest latency"
+    },
+    {
+      "id": "standard",
+      "name": "Standard",
+      "description": "Balanced quality and cost"
+    },
+    {
+      "id": "flex",
+      "name": "Flex",
+      "description": "Cost-effective for high volume"
+    }
   ],
   "agents": [],
-  "attachments": []
+  "attachments": [
+    {
+      "key": "0f220d2b-c783-487a-a255-da5c6ef393be",
+      "fileName": "helsadani01124@gmail.com Backup authentication codes.txt",
+      "fileSize": 94,
+      "mimeType": "text/plain",
+      "id": 1
+    },
+    {
+      "key": "cef7b60b-e34f-4947-9829-126a2059b80c",
+      "fileName": "helsadani01124@gmail.com Backup authentication codes.txt",
+      "fileSize": 94,
+      "mimeType": "text/plain",
+      "id": 2
+    }
+  ]
 }
