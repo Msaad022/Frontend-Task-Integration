@@ -13,7 +13,6 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { customFakeFetch } from "@/lib/utils";
 import { Toast } from "./Toast";
-import { AgentFormInitialData } from "../../types/agent";
 import { agentReducer, initialStateAgent } from "./reducers/agentReducer";
 import {
   startTestCallReducer,
@@ -112,6 +111,20 @@ function CollapsibleSection({
       </Card>
     </Collapsible>
   );
+}
+
+export interface AgentFormInitialData {
+  agentName?: string;
+  description?: string;
+  callType?: string;
+  language?: string;
+  voice?: string;
+  prompt?: string;
+  model?: string;
+  latency?: number;
+  speed?: number;
+  callScript?: string;
+  serviceDescription?: string;
 }
 
 interface AgentFormProps {
