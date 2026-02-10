@@ -41,9 +41,12 @@ import {
 } from "@/components/ui/select";
 
 interface UploadedFile {
+  id: string;
   name: string;
   size: number;
-  file: File;
+  file?: File;
+  status: "pending" | "uploading" | "success" | "error";
+  progress: number;
 }
 
 function formatFileSize(bytes: number): string {
@@ -235,6 +238,44 @@ const SelectDropdown = ({
     </>
   );
 };
+
+const uploadWithProgress = (
+  url: string,
+  file: File,
+  onProgress: (pct: number) => void,
+): Promise<{ key: string }> => {
+  return new Promise((resolve, reject) => {
+    const xhr = new XMLHttpRequest();
+    xhr.open("PUT", url);
+    xhr.setRequestHeader(
+      "Content-Type",
+      file.type || "application/octet-stream",
+    );
+
+    xhr.upload.onprogress = (e) => {
+      if (e.lengthComputable) {
+        const percentComplete = Math.round((e.loaded / e.total) * 100);
+        onProgress(percentComplete);
+      }
+    };
+    xhr.onload = () => {
+      if (xhr.status >= 200 && xhr.status < 300) {
+        try {
+          const data = JSON.parse(xhr.responseText);
+          console.log("Upload response data:", data);
+          resolve(data);
+        } catch {
+          reject(new Error(`Failed to parse response: ${xhr.responseText}`));
+        }
+      } else {
+        reject(new Error(`Upload failed: ${xhr.status}`));
+      }
+    };
+    xhr.onerror = () => reject();
+    xhr.send(file);
+  });
+};
+
 export function AgentForm({ mode, initialData }: AgentFormProps) {
   // Form state — initialized from initialData when provided
   const [agentName, setAgentName] = useState(initialData?.agentName ?? "");
@@ -286,6 +327,7 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
   const [testLastName, setTestLastName] = useState("");
   const [testGender, setTestGender] = useState("");
   const [testPhone, setTestPhone] = useState("");
+  const [attachments, setAttachments] = useState<number[]>([]);
 
   // Badge counts for required fields
   const basicSettingsMissing = [
@@ -308,24 +350,75 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
     ".xls",
   ];
 
-  const handleFiles = useCallback(
-    (files: FileList | null) => {
-      if (!files) return;
-      const newFiles: UploadedFile[] = [];
-      for (let i = 0; i < files.length; i++) {
-        const file = files[i];
-        const ext = "." + file.name.split(".").pop()?.toLowerCase();
-        if (ACCEPTED_TYPES.includes(ext)) {
-          newFiles.push({ name: file.name, size: file.size, file });
-        }
+  const handleFiles = useCallback(async (files: FileList | null) => {
+    if (!files) return;
+
+    for (const file of Array.from(files)) {
+      // Create a unique ID using name and a random string
+      const fileId = `${file.name}-${Math.random().toString(36).slice(2)}`;
+
+      // Add file to state with pending status
+      setUploadedFiles((prev) => [
+        ...prev,
+        {
+          id: fileId,
+          name: file.name,
+          size: file.size,
+          status: "pending",
+          progress: 0,
+        },
+      ]);
+
+      try {
+        // --- Step 1: Request Signed URL ---
+        const { signedUrl } = await customFakeFetch("attachments/upload-url", {
+          method: "POST",
+        });
+
+        // 2. Update status to uploading now that we have the URL
+        setUploadedFiles((prev) =>
+          prev.map((u) =>
+            u.id === fileId ? { ...u, status: "uploading" } : u,
+          ),
+        );
+
+        // --- Step 2: Upload via XHR ---
+        const { key } = await uploadWithProgress(signedUrl, file, (pct) => {
+          setUploadedFiles((prev) =>
+            prev.map((u) => (u.id === fileId ? { ...u, progress: pct } : u)),
+          );
+        });
+        // console.log("Upload successful, file key:", key, file.name);
+        // --- Step 3: Register ---
+        await customFakeFetch("attachments", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            key: key,
+            fileName: file.name,
+            fileSize: file.size,
+            mimeType: file.type,
+          }),
+        });
+
+        // 3. Final Success Update
+        setUploadedFiles((prev) =>
+          prev.map((u) =>
+            u.id === fileId ? { ...u, status: "success", progress: 100 } : u,
+          ),
+        );
+      } catch (error) {
+        setUploadedFiles((prev) =>
+          prev.map((u) => (u.id === fileId ? { ...u, status: "error" } : u)),
+        );
       }
-      setUploadedFiles((prev) => [...prev, ...newFiles]);
-    },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [],
-  );
+    }
+  }, []);
 
   const removeFile = (index: number) => {
+    fileInputRef.current?.value && (fileInputRef.current.value = ""); // reset file input
     setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
   };
 
@@ -563,30 +656,67 @@ export function AgentForm({ mode, initialData }: AgentFormProps) {
                   Accepted: .pdf, .doc, .docx, .txt, .csv, .xlsx, .xls
                 </p>
               </div>
-
               {/* File list */}
               {uploadedFiles.length > 0 ? (
                 <div className="space-y-2">
                   {uploadedFiles.map((f, i) => (
                     <div
-                      key={i}
-                      className="flex items-center justify-between rounded-md border px-3 py-2"
+                      key={f.id}
+                      className="p-3 border rounded-lg mb-2 bg-white shadow-sm"
                     >
-                      <div className="flex items-center gap-2 min-w-0">
-                        <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
-                        <span className="text-sm truncate">{f.name}</span>
-                        <span className="text-xs text-muted-foreground shrink-0">
-                          {formatFileSize(f.size)}
-                        </span>
+                      <div className="flex justify-between items-center mb-1">
+                        <div className="flex items-center gap-2 min-w-0">
+                          <FileText className="h-4 w-4 shrink-0 text-muted-foreground" />
+                          <span className="text-sm truncate">{f.name}</span>
+                          <span className="text-xs text-muted-foreground shrink-0">
+                            {formatFileSize(f.size)}
+                          </span>
+                        </div>
+                        <div className="text-[10px] font-bold">
+                          {f.status === "pending" && (
+                            <span className="text-orange-500 animate-pulse">
+                              PENDING...
+                            </span>
+                          )}
+                          {f.status === "uploading" && (
+                            <span className="text-blue-600">
+                              UPLOADING {f.progress}%
+                            </span>
+                          )}
+                          {f.status === "success" && (
+                            <span className="text-green-600 font-bold tracking-tight">
+                              ✓ SUCCESS
+                            </span>
+                          )}
+                          {f.status === "error" && (
+                            <span className="text-red-500">FAILED</span>
+                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-7 w-7 shrink-0"
+                            onClick={() => removeFile(i)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
+                        </div>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-7 w-7 shrink-0"
-                        onClick={() => removeFile(i)}
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
+                      {
+                        /* Progress Bar */
+                        f.status === "uploading" || f.status === "pending" ? (
+                          <div className="w-full bg-gray-100 rounded-full h-1.5 mt-2 overflow-hidden">
+                            <div
+                              className={`h-full transition-all duration-300 ease-out bg-blue-600`}
+                              style={{
+                                width:
+                                  f.status === "pending"
+                                    ? "5%"
+                                    : `${f.progress}%`,
+                              }}
+                            />
+                          </div>
+                        ) : null
+                      }
                     </div>
                   ))}
                 </div>

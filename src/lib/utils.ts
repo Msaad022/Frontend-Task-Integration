@@ -11,9 +11,8 @@ export const customFakeFetch = async (
   options: RequestInit = {},
   delayMs: number = 1500,
 ) => {
-  const url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/${endpoint}`;
+  let url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/${endpoint}`;
   const delay = new Promise((resolve) => setTimeout(resolve, delayMs));
-
   const [response] = await Promise.all([fetch(url, options), delay]);
 
   if (!response.ok) throw new Error("Request Failed");
@@ -24,12 +23,3 @@ export const customFakeFetch = async (
     ?.includes("application/json");
   return isJson ? response.json() : response.text();
 };
-
-/*
- const result = await customFetch(signedUrl, {
-  method: 'PUT',
-  body: file, 
-  headers: { 'Content-Type': 'application/octet-stream' }
-});
-
- */
