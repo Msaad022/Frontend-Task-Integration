@@ -9,7 +9,7 @@ export function cn(...inputs: ClassValue[]) {
 export const customFakeFetch = async (
   endpoint: string,
   options: RequestInit = {},
-  delayMs: number = 1500,
+  delayMs: number = 0,
 ) => {
   let url = `${process.env.NEXT_PUBLIC_API_BASE_URL}/${endpoint}`;
   const delay = new Promise((resolve) => setTimeout(resolve, delayMs));

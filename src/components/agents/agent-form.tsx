@@ -13,6 +13,13 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { customFakeFetch } from "@/lib/utils";
 import { Toast } from "./Toast";
+import { AgentFormInitialData } from "../../types/agent";
+import { agentReducer, initialStateAgent } from "./reducers/agentReducer";
+import {
+  startTestCallReducer,
+  initialStartTestCall,
+} from "./reducers/startTestCallReducer";
+import { dropdownReducer, initialState } from "./reducers/dropdownReducer";
 import {
   Field,
   FieldContent,
@@ -107,97 +114,6 @@ function CollapsibleSection({
   );
 }
 
-export interface AgentFormInitialData {
-  agentName?: string;
-  description?: string;
-  callType?: string;
-  language?: string;
-  voice?: string;
-  prompt?: string;
-  model?: string;
-  latency?: number;
-  speed?: number;
-  callScript?: string;
-  serviceDescription?: string;
-}
-type AgentState = {
-  values: {
-    agentName: string;
-    description: string;
-    callType: string;
-    language: string;
-    voice: string;
-    prompt: string;
-    model: string;
-    latency: number;
-    speed: number;
-    callScript: string;
-    serviceDescription: string;
-    attachments: number[];
-    tools: {
-      allowHangUp: boolean;
-      allowCallback: boolean;
-      liveTransfer: boolean;
-    };
-  };
-  errors: Record<string, string>;
-};
-
-type ActionAgent =
-  | { type: "UPDATE_FIELD"; field: string; value: any }
-  | { type: "UPDATE_TOOL"; tool: string; value: boolean }
-  | { type: "SET_ERRORS"; errors: Record<string, string> }
-  | { type: "RESET_FORM" };
-
-const initialStateAgent: AgentState = {
-  values: {
-    agentName: "",
-    description: "",
-    callType: "",
-    language: "",
-    voice: "",
-    prompt: "",
-    model: "",
-    latency: 0.5,
-    speed: 100,
-    callScript: "",
-    serviceDescription: "",
-    attachments: [],
-    tools: {
-      allowHangUp: true,
-      allowCallback: false,
-      liveTransfer: false,
-    },
-  },
-  errors: {},
-};
-
-function agentReducer(state: AgentState, action: ActionAgent): AgentState {
-  switch (action.type) {
-    case "UPDATE_FIELD":
-      return {
-        ...state,
-        values: { ...state.values, [action.field]: action.value },
-        // Clear the error for this field as the user types
-        errors: { ...state.errors, [action.field]: "" },
-      };
-    case "UPDATE_TOOL":
-      return {
-        ...state,
-        values: {
-          ...state.values,
-          tools: { ...state.values.tools, [action.tool]: action.value },
-        },
-      };
-    case "SET_ERRORS":
-      return { ...state, errors: action.errors };
-    case "RESET_FORM":
-      return initialStateAgent;
-    default:
-      return state;
-  }
-}
-
 interface AgentFormProps {
   mode: "create" | "edit";
   initialData?: AgentFormInitialData;
@@ -208,54 +124,6 @@ type DropdownState = {
   error: string | null;
 };
 
-type State = {
-  [key: string]: DropdownState;
-};
-
-type Action =
-  | { type: "FETCH_START"; dropdown: string }
-  | { type: "FETCH_SUCCESS"; dropdown: string; payload: any[] }
-  | { type: "FETCH_ERROR"; dropdown: string; payload: string };
-
-const initialState: State = {};
-/**
- * dropdownReducer is a reducer function that manages the state of multiple dropdowns in the AgentForm component.
- */
-function dropdownReducer(state: State, action: Action): State {
-  const { dropdown } = action;
-
-  switch (action.type) {
-    case "FETCH_START":
-      return {
-        ...state,
-        [dropdown]: {
-          ...(state[dropdown] || { data: [] }),
-          isLoading: true,
-          error: null,
-        },
-      };
-    case "FETCH_SUCCESS":
-      return {
-        ...state,
-        [dropdown]: {
-          isLoading: false,
-          data: action.payload,
-          error: null,
-        },
-      };
-    case "FETCH_ERROR":
-      return {
-        ...state,
-        [dropdown]: {
-          ...(state[dropdown] || { data: [] }),
-          isLoading: false,
-          error: action.payload,
-        },
-      };
-    default:
-      return state;
-  }
-}
 /**
  * SelectDropdown component is a reusable dropdown component that fetches its options from an API when opened.
  */
@@ -364,6 +232,16 @@ export function AgentForm({ mode }: AgentFormProps) {
     initialStateAgent,
   );
   const { values } = stateAgent;
+
+  /**
+   * Start Test Call state management using useReducer to handle the state of the test call form, which includes fields for test call details and error handling.
+   */
+  const [stateStartTestCall, dispatchStartTestCall] = useReducer(
+    startTestCallReducer,
+    initialStartTestCall,
+  );
+  const valuesTestCall = stateStartTestCall.values;
+
   /**
    * Dropdown state management using useReducer to handle multiple dropdowns with shared logic for fetching data, loading states, and error handling.
    * The state structure allows us to easily manage the state of each dropdown independently while keeping the logic centralized in the reducer.
@@ -375,6 +253,7 @@ export function AgentForm({ mode }: AgentFormProps) {
   const [attachments, setAttachments] = useState<number[]>([]);
   const [agentId, setAgentId] = useState<number | null>(null);
   const [toastMsg, setToastMsg] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const basicSettingsMissing = [
     values.agentName,
@@ -390,7 +269,7 @@ export function AgentForm({ mode }: AgentFormProps) {
     if (stateR[dropdown]?.data.length) return; // data already fetched, no need to fetch again
     dispatch({ type: "FETCH_START", dropdown });
     try {
-      const response = await customFakeFetch(dropdown);
+      const response = await customFakeFetch(dropdown, {}, 1500);
       dispatch({ type: "FETCH_SUCCESS", dropdown, payload: response });
     } catch (error: any) {
       dispatch({ type: "FETCH_ERROR", dropdown, payload: error.message });
@@ -403,11 +282,7 @@ export function AgentForm({ mode }: AgentFormProps) {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Test Call
-  const [testFirstName, setTestFirstName] = useState("");
-  const [testLastName, setTestLastName] = useState("");
-  const [testGender, setTestGender] = useState("");
-  const [testPhone, setTestPhone] = useState("");
-  const [isSaving, setIsSaving] = useState(false);
+  const [isSending, setIsSending] = useState(false);
 
   // File upload handlers
   const ACCEPTED_TYPES = [
@@ -459,18 +334,22 @@ export function AgentForm({ mode }: AgentFormProps) {
           );
         });
         // --- Step 3: Register ---
-        const { id } = await customFakeFetch("attachments", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
+        const { id } = await customFakeFetch(
+          "attachments",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              key: key,
+              fileName: file.name,
+              fileSize: file.size,
+              mimeType: file.type,
+            }),
           },
-          body: JSON.stringify({
-            key: key,
-            fileName: file.name,
-            fileSize: file.size,
-            mimeType: file.type,
-          }),
-        });
+          1000,
+        );
 
         // 3. Final Success Update
         setUploadedFiles((prev) =>
@@ -532,7 +411,7 @@ export function AgentForm({ mode }: AgentFormProps) {
   // Form submission handler
   const handleSaveAgent = async (e: React.FormEvent) => {
     e.preventDefault();
-
+    setIsSaving(true);
     try {
       // Determine if we are creating (POST) or updating (PUT)
       console.log("Attachments to submit:", agentId, attachments);
@@ -552,7 +431,7 @@ export function AgentForm({ mode }: AgentFormProps) {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),
         },
-        500,
+        1000,
       );
       // Store the ID if it's the first time saving (POST)
       if (!agentId && response.id) {
@@ -569,6 +448,49 @@ export function AgentForm({ mode }: AgentFormProps) {
         type: "SET_ERRORS",
         errors: err.details || { global: err.message },
       });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  /**
+   * handleChangeStartTestCall is a helper function to manage changes in the test call form fields, dispatching updates to the startTestCallReducer to keep the state in sync with user input.
+   */
+  const handleChangeStartTestCall = (
+    e: React.ChangeEvent<
+      HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement
+    >,
+  ) => {
+    const { name, value, type } = e.target;
+    dispatchStartTestCall({
+      type: "UPDATE_FIELD",
+      field: name,
+      value: type === "number" ? Number(value) : value,
+    });
+  };
+
+  const handleSaveStartTestCall = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsSending(true);
+    try {
+      const { status } = await customFakeFetch(
+        `agents/${agentId}/test-call`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(valuesTestCall),
+        },
+        2000,
+      );
+      dispatchStartTestCall({ type: "RESET_FORM" });
+      setToastMsg(`Test call ${status}!`);
+    } catch (err: any) {
+      dispatchStartTestCall({
+        type: "SET_ERRORS",
+        errors: err.details || { global: err.message },
+      });
+    } finally {
+      setIsSending(false);
     }
   };
   return (
@@ -1001,72 +923,102 @@ export function AgentForm({ mode }: AgentFormProps) {
         {/* Right Column — Sticky Test Call Card */}
         <div className="lg:col-span-1">
           <div className="lg:sticky lg:top-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Phone className="h-5 w-5" />
-                  Test Call
-                </CardTitle>
-                <CardDescription>
-                  Make a test call to preview your agent. Each test call will
-                  deduct credits from your account.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="grid grid-cols-2 gap-3">
+            <form
+              className="relative lg:col-span-2 flex flex-col gap-4"
+              action="/api/agents/:id/test-call"
+              method="POST"
+              onSubmit={handleSaveStartTestCall}
+            >
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Phone className="h-5 w-5" />
+                    Test Call
+                  </CardTitle>
+                  <CardDescription>
+                    Make a test call to preview your agent. Each test call will
+                    deduct credits from your account.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="test-first-name">First Name</Label>
+                        <Input
+                          name="testFirstName"
+                          id="test-first-name"
+                          placeholder="John"
+                          value={valuesTestCall.testFirstName}
+                          onChange={handleChangeStartTestCall}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="test-last-name">Last Name</Label>
+                        <Input
+                          name="testLastName"
+                          id="test-last-name"
+                          placeholder="Doe"
+                          value={valuesTestCall.testLastName}
+                          onChange={handleChangeStartTestCall}
+                        />
+                      </div>
+                    </div>
+
                     <div className="space-y-2">
-                      <Label htmlFor="test-first-name">First Name</Label>
-                      <Input
-                        id="test-first-name"
-                        placeholder="John"
-                        value={testFirstName}
-                        onChange={(e) => setTestFirstName(e.target.value)}
+                      <Label>Gender</Label>
+                      <Select
+                        name="testGender"
+                        value={valuesTestCall.testGender}
+                        onValueChange={(value) =>
+                          dispatchStartTestCall({
+                            type: "UPDATE_FIELD",
+                            field: "testGender",
+                            value,
+                          })
+                        }
+                      >
+                        <SelectTrigger className="w-full">
+                          <SelectValue placeholder="Select gender" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="male">Male</SelectItem>
+                          <SelectItem value="female">Female</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label htmlFor="test-phone">
+                        Phone Number <span className="text-destructive">*</span>
+                      </Label>
+                      <PhoneInput
+                        defaultCountry="EG"
+                        name="testPhone"
+                        value={valuesTestCall.testPhone}
+                        onChange={(value) =>
+                          dispatchStartTestCall({
+                            type: "UPDATE_FIELD",
+                            field: "testPhone",
+                            value,
+                          })
+                        }
+                        placeholder="Enter phone number"
                       />
                     </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="test-last-name">Last Name</Label>
-                      <Input
-                        id="test-last-name"
-                        placeholder="Doe"
-                        value={testLastName}
-                        onChange={(e) => setTestLastName(e.target.value)}
-                      />
-                    </div>
-                  </div>
 
-                  <div className="space-y-2">
-                    <Label>Gender</Label>
-                    <Select value={testGender} onValueChange={setTestGender}>
-                      <SelectTrigger className="w-full">
-                        <SelectValue placeholder="Select gender" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="male">Male</SelectItem>
-                        <SelectItem value="female">Female</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Button
+                      className="w-full"
+                      type="submit"
+                      disabled={agentId ? false : true}
+                    >
+                      <Phone className="mr-2 h-4 w-4" />
+                      {isSending ? "Start Callling..." : "Start Test Call"}
+                    </Button>
                   </div>
-
-                  <div className="space-y-2">
-                    <Label htmlFor="test-phone">
-                      Phone Number <span className="text-destructive">*</span>
-                    </Label>
-                    <PhoneInput
-                      defaultCountry="EG"
-                      value={testPhone}
-                      onChange={(value) => setTestPhone(value)}
-                      placeholder="Enter phone number"
-                    />
-                  </div>
-
-                  <Button className="w-full">
-                    <Phone className="mr-2 h-4 w-4" />
-                    Start Test Call
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </form>
           </div>
         </div>
       </div>
