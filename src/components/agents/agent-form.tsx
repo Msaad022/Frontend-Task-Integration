@@ -129,7 +129,7 @@ type DropdownState = {
  */
 interface SelectDropdownProps {
   name: string;
-  lable: string;
+  label: string;
   root: string;
   dropdown: DropdownState;
   value: any;
@@ -139,7 +139,7 @@ interface SelectDropdownProps {
 
 const SelectDropdown = ({
   name,
-  lable,
+  label,
   root,
   dropdown,
   value,
@@ -149,7 +149,7 @@ const SelectDropdown = ({
   return (
     <>
       <Label>
-        {lable} <span className="text-destructive">*</span>
+        {label} <span className="text-destructive">*</span>
         {dropdown?.isLoading && (
           <Badge variant="outline" className="ml-2">
             Loading...{" "}
@@ -169,7 +169,7 @@ const SelectDropdown = ({
           {dropdown?.data.map((item: any) => (
             <SelectItem key={item.id} value={item.id}>
               {item.name}
-              {lable == "Voice" && (
+              {label == "Voice" && (
                 <Badge variant="outline" className="ml-2 ms-auto">
                   {item.tag}
                 </Badge>
@@ -575,7 +575,7 @@ export function AgentForm({ mode }: AgentFormProps) {
                 <div className="space-y-2">
                   <SelectDropdown
                     name="language"
-                    lable="Language"
+                    label="Language"
                     root="languages"
                     dropdown={languages}
                     value={values.language}
@@ -593,7 +593,7 @@ export function AgentForm({ mode }: AgentFormProps) {
                 <div className="space-y-2">
                   <SelectDropdown
                     name="voice"
-                    lable="Voice"
+                    label="Voice"
                     root="voices"
                     dropdown={voices}
                     value={values.voice}
@@ -611,7 +611,7 @@ export function AgentForm({ mode }: AgentFormProps) {
                 <div className="space-y-2">
                   <SelectDropdown
                     name="prompt"
-                    lable="Prompt"
+                    label="Prompt"
                     root="prompts"
                     dropdown={prompts}
                     value={values.prompt}
@@ -629,7 +629,7 @@ export function AgentForm({ mode }: AgentFormProps) {
                 <div className="space-y-2">
                   <SelectDropdown
                     name="model"
-                    lable="Model"
+                    label="Model"
                     root="models"
                     dropdown={models}
                     value={values.model}
@@ -839,7 +839,7 @@ export function AgentForm({ mode }: AgentFormProps) {
                 ) : (
                   <div className="flex flex-col items-center justify-center py-6 text-muted-foreground">
                     <FileText className="h-10 w-10 mb-2" />
-                    <p className="text-sm">No Files Available</p>
+                    <p className="text-sm">No Files Availabel</p>
                   </div>
                 )}
               </div>
