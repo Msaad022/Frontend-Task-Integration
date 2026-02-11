@@ -148,6 +148,7 @@ interface SelectDropdownProps {
   value: any;
   onValueChange: any;
   fetchDropdownHandler: (open: boolean, dropdown: string) => Promise<void>;
+  showTag?: boolean;
 }
 
 const SelectDropdown = ({
@@ -158,6 +159,7 @@ const SelectDropdown = ({
   value,
   onValueChange,
   fetchDropdownHandler,
+  showTag = false,
 }: SelectDropdownProps) => {
   return (
     <>
@@ -176,13 +178,13 @@ const SelectDropdown = ({
         onValueChange={onValueChange}
       >
         <SelectTrigger className="w-full">
-          <SelectValue placeholder="Select language" />
+          <SelectValue placeholder={`Select ${name}`} />
         </SelectTrigger>
         <SelectContent>
           {dropdown?.data.map((item: any) => (
             <SelectItem key={item.id} value={item.id}>
               {item.name}
-              {label == "Voice" && (
+              {showTag && item.tag && (
                 <Badge variant="outline" className="ml-2 ms-auto">
                   {item.tag}
                 </Badge>
@@ -193,7 +195,7 @@ const SelectDropdown = ({
       </Select>
       {dropdown?.error && (
         <p className="text-sm text-destructive">
-          Error loading languages: {dropdown.error}
+          Error loading {name}: {dropdown.error}
         </p>
       )}
     </>
@@ -608,6 +610,7 @@ export function AgentForm({ mode }: AgentFormProps) {
                     name="voice"
                     label="Voice"
                     root="voices"
+                    showTag={true}
                     dropdown={voices}
                     value={values.voice}
                     onValueChange={(value: string) =>
