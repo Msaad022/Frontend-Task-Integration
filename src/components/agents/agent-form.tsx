@@ -233,7 +233,7 @@ const uploadWithProgress = (
         reject(new Error(`Upload failed: ${xhr.status}`));
       }
     };
-    xhr.onerror = () => reject();
+    xhr.onerror = () => reject(new Error("Network error during upload"));
     xhr.send(file);
   });
 };
