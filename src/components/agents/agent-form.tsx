@@ -380,10 +380,13 @@ export function AgentForm({ mode }: AgentFormProps) {
       }
     }
   }, []);
-  const removeFile = (index: number) => {
-    fileInputRef.current?.value && (fileInputRef.current.value = ""); // reset file input
-    setAttachments((prev) => prev.filter((_, i) => i !== index));
-    setUploadedFiles((prev) => prev.filter((_, i) => i !== index));
+
+  const removeFile = (fileIdToRemove: string, indexInUI: number) => {
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    setAttachments((prev) =>
+      prev.filter((id) => id !== Number(fileIdToRemove)),
+    );
+    setUploadedFiles((prev) => prev.filter((_, i) => i !== indexInUI));
   };
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -827,7 +830,7 @@ export function AgentForm({ mode }: AgentFormProps) {
                               variant="ghost"
                               size="icon"
                               className="h-7 w-7 shrink-0"
-                              onClick={() => removeFile(i)}
+                              onClick={() => removeFile(f.id, i)}
                             >
                               <X className="h-4 w-4" />
                             </Button>
