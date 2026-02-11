@@ -432,7 +432,6 @@ export function AgentForm({ mode }: AgentFormProps) {
     setIsSaving(true);
     try {
       // Determine if we are creating (POST) or updating (PUT)
-      console.log("Attachments to submit:", agentId, attachments);
       const method = agentId ? "PUT" : "POST";
       const endpoint = agentId ? `agents/${agentId}` : "agents";
 
@@ -489,6 +488,7 @@ export function AgentForm({ mode }: AgentFormProps) {
 
   const handleSaveStartTestCall = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!agentId) return;
     setIsSending(true);
     try {
       const { status } = await customFakeFetch(
@@ -524,8 +524,6 @@ export function AgentForm({ mode }: AgentFormProps) {
         {/* Left Column — Collapsible Sections */}
         <form
           className="relative lg:col-span-2 flex flex-col gap-4"
-          action="/api/agents"
-          method="POST"
           onSubmit={handleSaveAgent}
         >
           <div className="flex flex-col gap-4">
@@ -857,8 +855,8 @@ export function AgentForm({ mode }: AgentFormProps) {
                   </div>
                 ) : (
                   <div className="flex flex-col items-center justify-center py-6 text-muted-foreground">
-                    <FileText className="h-10 w-10 mb-2" />
-                    <p className="text-sm">No Files Availabel</p>
+                    <FileText className="h-10 w-10 mb-2" />+{" "}
+                    <p className="text-sm">No Files Available</p>
                   </div>
                 )}
               </div>
@@ -944,8 +942,6 @@ export function AgentForm({ mode }: AgentFormProps) {
           <div className="lg:sticky lg:top-6">
             <form
               className="relative lg:col-span-2 flex flex-col gap-4"
-              action="/api/agents/:id/test-call"
-              method="POST"
               onSubmit={handleSaveStartTestCall}
             >
               <Card>
