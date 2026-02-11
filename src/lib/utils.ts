@@ -15,8 +15,20 @@ export const customFakeFetch = async (
   const delay = new Promise((resolve) => setTimeout(resolve, delayMs));
   const [response] = await Promise.all([fetch(url, options), delay]);
 
-  if (!response.ok) throw new Error("Request Failed");
-
+  if (!response.ok) {
+    let errorBody: any;
+    try {
+      errorBody = await response.json();
+    } catch {
+      // response may not be JSON
+    }
+    const err = new Error(
+      errorBody?.message || `Request failed (${response.status})`,
+    );
+    (err as any).details = errorBody?.details;
+    (err as any).status = response.status;
+    throw err;
+  }
   // Check if the response is JSON
   const isJson = response.headers
     .get("content-type")
