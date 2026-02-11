@@ -1029,10 +1029,10 @@ export function AgentForm({ mode }: AgentFormProps) {
                     <Button
                       className="w-full"
                       type="submit"
-                      disabled={agentId ? false : true}
+                      disabled={!agentId}
                     >
-                      <Phone className="mr-2 h-4 w-4" />
-                      {isSending ? "Start Callling..." : "Start Test Call"}
+                      <Phone className="mr-2 h-4 w-4" />+{" "}
+                      {isSending ? "Starting Call..." : "Start Test Call"}
                     </Button>
                   </div>
                 </CardContent>
